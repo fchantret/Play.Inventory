@@ -10,13 +10,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddMongo()
                 .AddMongoRepository<InventoryItem>("inventoryitems");
 
+Random jitterer = new Random();
+
 builder.Services.AddHttpClient<CatalogClient>(client =>
 {
     client.BaseAddress = new Uri("https://localhost:7228");
 })
 .AddTransientHttpErrorPolicy(policyBuilder => policyBuilder.Or<TimeoutRejectedException>().WaitAndRetryAsync(
     5,
-    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+    retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
+                    + TimeSpan.FromMilliseconds(jitterer.Next(0, 1000)),
     // For demonstration purposes, remove the following section in production code
     onRetry: (outcome, timespan, retryAttempt) =>
     {
